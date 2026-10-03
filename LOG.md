@@ -129,3 +129,36 @@ Visual inspection identifies candidate signals but does not prove predictive use
 - `engine_id` is important for grouping and leakage-safe splitting.
 - `max_cycle` is an intermediate target-construction variable and should not be used as a model input.
 - Sensor changes should not automatically be interpreted as degradation because operating conditions may also affect sensor readings.
+
+## Day 3 — RUL Label Definition
+
+- Constructed raw engine-specific RUL as:
+  `RUL = max_cycle - current_cycle`
+- Applied the handbook's piecewise-linear RUL cap:
+  `RUL = min(RUL, 125)`
+- Preserved the original target as `RUL_raw` for transparency.
+- The final modeling target is stored in `RUL`.
+- The capped target remains at 125 during early life and decreases linearly toward 0 as the engine approaches its final recorded cycle.
+- Automated validation confirmed minimum RUL = 0 and maximum RUL = 125.
+
+
+## Day 4 — Feature Engineering
+
+### Completed
+- Selected six informative sensors based on Day 2 EDA:
+  `sensor_2`, `sensor_4`, `sensor_7`, `sensor_9`, `sensor_14`, `sensor_20`.
+- Created 5-cycle rolling mean features.
+- Created 5-cycle rolling standard deviation features.
+- Created engine-specific difference-from-start features.
+- Used `groupby("engine_id")` to ensure rolling calculations and baselines stay within each engine.
+- Handled first-cycle rolling standard deviation NaN values by assigning 0.
+- Created 24 sensor-derived features.
+- Validated that engineered features contain 0 NaN values.
+- Saved the engineered dataset to:
+  `data/engineered_train_FD001.csv`.
+
+### Validation
+- Total NaN values in engineered features: 0.
+- First observation of each engine correctly starts its own rolling history.
+- Difference-from-start is 0 at each engine's first observation.
+
