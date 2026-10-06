@@ -162,3 +162,20 @@ Visual inspection identifies candidate signals but does not prove predictive use
 - First observation of each engine correctly starts its own rolling history.
 - Difference-from-start is 0 at each engine's first observation.
 
+## Day 5 — Train/Validation Splitting & Official Test Set
+
+### Completed
+- Split the 100 training engines into 80 training engines and 20 validation engines.
+- Performed the split at the engine level rather than the row level.
+- Training set: 16,561 rows from 80 engines.
+- Validation set: 4,070 rows from 20 engines.
+- Verified zero engine overlap between training and validation.
+- Loaded the official `test_FD001.txt`.
+- Test set contains 13,096 rows, 26 columns, and 100 engines.
+- Loaded `RUL_FD001.txt` containing 100 ground-truth RUL values.
+- Verified the number of official RUL values matches the number of test engines.
+- Kept the official test set separate from model development.
+
+### Important Leakage Rule
+Validation engines are completely unseen during training.
+The official test set remains untouched for final evaluation.
