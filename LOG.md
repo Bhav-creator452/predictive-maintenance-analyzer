@@ -279,3 +279,36 @@ The final feature set is provisional and may be revisited if later validation ev
 - Feature importance does not establish physical causation.
 - Repeated experimentation on the same validation set can lead to selection bias.
 - The official test set remains unused.
+
+
+## Day 9 — Proper Evaluation Beyond RMSE
+
+### Model
+- XGBoost baseline using all 24 engineered features.
+- Validation set: 4,070 observations from 20 unseen engines.
+- Target: capped RUL, ranging from 0 to 125 cycles.
+
+### Overall Validation Metrics
+- RMSE: 12.999 cycles
+- MAE: 9.145 cycles
+- Mean signed error: +1.002 cycles
+
+### Critical Low-RUL Evaluation
+
+| Region | Observations | RMSE | MAE | Mean Signed Error |
+|---|---:|---:|---:|---:|
+| Critical: RUL < 30 | 600 | 7.553 | 5.321 | +3.214 |
+| Other: RUL >= 30 | 3,470 | 13.723 | 9.806 | +0.619 |
+| Overall | 4,070 | 12.999 | 9.145 | +1.002 |
+
+### Findings
+- The predicted-versus-actual plot shows a clear positive relationship with noticeable prediction spread.
+- Absolute errors are smaller in the critical low-RUL subset than in the remaining observations.
+- Positive mean signed error indicates that the model tends to overestimate RUL, particularly in the critical subset.
+- The model's errors must be assessed for both magnitude and direction.
+
+### Limitations
+- These are validation metrics, not official held-out test results.
+- The labels are capped at 125 cycles.
+- Rows belonging to the same engine are correlated; observations are not independent machines.
+- These metrics alone do not establish real-world industrial reliability.
