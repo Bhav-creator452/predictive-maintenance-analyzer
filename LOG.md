@@ -214,3 +214,36 @@ Predictions were not clipped when calculating the baseline metrics.
 These results apply to the current engine-level validation split
 and capped RUL target. They are not official test-set results and
 do not establish production reliability.
+
+## Day 7 — XGBoost Baseline
+
+### Configuration
+- Library: XGBoost 3.4.1
+- Model: XGBRegressor
+- Objective: `reg:squarederror`
+- Trees: 200
+- Maximum depth: 4
+- Learning rate: 0.05
+- Subsample: 0.8
+- Column sample per tree: 0.8
+- Random state: 42
+
+### Evaluation Setup
+- Training: 16,561 observations from 80 engines
+- Validation: 4,070 observations from 20 unseen engines
+- Features: 24 engineered sensor-derived features
+- Target: capped RUL (0–125 cycles)
+- Official test set: not used
+
+### Validation Results
+
+| Model | RMSE | MAE |
+|---|---:|---:|
+| Linear Regression | 16.15 | 12.95 |
+| Random Forest | 13.08 | 9.20 |
+| XGBoost | 13.00 | 9.14 |
+
+### Findings
+XGBoost achieved the lowest validation RMSE and MAE. It improved substantially over Linear Regression, but only marginally over Random Forest on this split.
+
+These are baseline results with fixed hyperparameters, not tuned results or official test-set metrics.
