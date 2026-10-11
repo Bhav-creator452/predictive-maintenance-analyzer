@@ -247,3 +247,35 @@ do not establish production reliability.
 XGBoost achieved the lowest validation RMSE and MAE. It improved substantially over Linear Regression, but only marginally over Random Forest on this split.
 
 These are baseline results with fixed hyperparameters, not tuned results or official test-set metrics.
+
+## Day 8 — Feature Importance & Iteration
+
+### Feature Importance
+- Extracted XGBoost feature importances for the 24 engineered features.
+- `sensor_4_roll_mean` was the highest-ranked individual feature.
+- Grouped feature importance by original sensor.
+- Sensor 14 had the lowest combined importance among the six selected sensors.
+
+### Feature Ablation Experiments
+
+| Experiment | Features | RMSE | MAE |
+|---|---:|---:|---:|
+| Baseline | 24 | 12.999 | 9.145 |
+| Without sensor_14 | 20 | 12.869 | 9.209 |
+| Without sensor_9 | 20 | 12.886 | 9.277 |
+| Without sensor_4 | 20 | 13.330 | 9.599 |
+| Without sensor_7 | 20 | 13.437 | 9.690 |
+| Without sensor_20 | 20 | 13.688 | 9.525 |
+| Without sensor_2 | 20 | 13.693 | 9.618 |
+| Without sensor_14 and sensor_9 | 16 | 13.203 | 9.715 |
+
+### Decision
+Retained all 24 engineered features for the current baseline. Removing Sensor 14 or Sensor 9 individually produced small, conflicting changes in RMSE and MAE, while removing both worsened both metrics. Removing Sensors 2, 4, 7, or 20 also worsened both metrics in their individual experiments.
+
+The final feature set is provisional and may be revisited if later validation evidence justifies a change.
+
+### Limitations
+- Experiments used one engine-level validation split.
+- Feature importance does not establish physical causation.
+- Repeated experimentation on the same validation set can lead to selection bias.
+- The official test set remains unused.
