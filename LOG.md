@@ -179,3 +179,38 @@ Visual inspection identifies candidate signals but does not prove predictive use
 ### Important Leakage Rule
 Validation engines are completely unseen during training.
 The official test set remains untouched for final evaluation.
+
+## Day 6 — Baseline Modeling
+
+### Models
+- Linear Regression
+- Random Forest Regressor
+  - n_estimators: 100
+  - random_state: 42
+
+### Evaluation setup
+- Training: 16,561 observations from 80 engines
+- Validation: 4,070 observations from 20 unseen engines
+- Input features: 24 engineered sensor features
+- Target: capped RUL (0–125 cycles)
+- Engine overlap: 0
+
+### Validation Results
+
+| Model | RMSE | MAE |
+|---|---:|---:|
+| Linear Regression | 16.15 | 12.95 |
+| Random Forest | 13.08 | 9.20 |
+
+### Findings
+Random Forest outperformed Linear Regression on both validation
+metrics. Its RMSE was approximately 19% lower and its MAE
+approximately 29% lower.
+
+Linear Regression produced predictions outside the target range.
+Predictions were not clipped when calculating the baseline metrics.
+
+### Limitations
+These results apply to the current engine-level validation split
+and capped RUL target. They are not official test-set results and
+do not establish production reliability.
