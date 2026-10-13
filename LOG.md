@@ -489,3 +489,46 @@ Both models were evaluated against the same capped RUL targets at the sequence e
 
 ### Day 12 Outcome
 A working LSTM pipeline has been implemented, trained, and evaluated. The model shows meaningful learning after the training procedure was revised, but tuned XGBoost remains the stronger model on the current matched validation comparison.
+
+
+## Day 13 — XGBoost vs LSTM: Official Test Comparison
+
+### Evaluation Setup
+- Official test engines: 100
+- Ground-truth labels: original, uncapped `RUL_FD001.txt`
+- Both models evaluated on the same 100 engines in matching order.
+- Test set remained excluded from model training and hyperparameter selection.
+
+### Models
+- Tuned XGBoost: `max_depth=5`, `n_estimators=250`, `learning_rate=0.03`
+- LSTM: 30-cycle sequences, six sensors, one LSTM layer, 32 hidden units.
+- Final LSTM trained on all labelled training engines for five epochs, based on the best validation epoch.
+
+### Overall Official Test Results
+
+| Model | RMSE | MAE |
+|---|---:|---:|
+| Tuned XGBoost | 16.452 | 12.442 |
+| LSTM | 16.425 | 12.596 |
+
+### Critical Low-RUL Results
+
+Critical region: true RUL < 30 cycles.
+
+| Model | Observations | RMSE | MAE |
+|---|---:|---:|---:|
+| Tuned XGBoost | 25 | 6.596 | 5.345 |
+| LSTM | 25 | 5.405 | 4.438 |
+
+### Findings
+- Overall RMSE is nearly identical, with LSTM lower by 0.027 cycles.
+- XGBoost has a slightly lower overall MAE.
+- LSTM has lower RMSE and MAE in the critical low-RUL subset.
+- The critical-region sample is small, so this result requires cautious interpretation.
+- Both models were trained using capped RUL targets, while evaluation used the original uncapped test labels.
+
+### Model Decision
+Retain both models for further evaluation. XGBoost remains the primary baseline due to its simpler deployment characteristics and slightly lower overall MAE. LSTM remains a challenger because of its better critical-zone results. No ensemble will be adopted without further evidence.
+
+### Limitations
+These benchmark results are based on the C-MAPSS FD001 dataset and do not establish real-world industrial reliability. Further work is required on uncertainty estimation, asymmetric maintenance costs, prediction constraints, and deployment monitoring.
