@@ -532,3 +532,42 @@ Retain both models for further evaluation. XGBoost remains the primary baseline 
 
 ### Limitations
 These benchmark results are based on the C-MAPSS FD001 dataset and do not establish real-world industrial reliability. Further work is required on uncertainty estimation, asymmetric maintenance costs, prediction constraints, and deployment monitoring.
+
+
+## Day 14 — Uncertainty Estimation with Quantile Regression
+
+### Objective
+Extend point predictions with lower and upper RUL prediction bounds.
+
+### Initial Quantile Models
+- Algorithm: XGBoost quantile regression
+- Quantiles: 0.10, 0.50, and 0.90
+- Features: 24 engineered sensor features
+- Initial validation observations: 4,070
+- Quantile-crossing observations: 143
+- Initial empirical coverage: 91.6%
+- Initial mean interval width: 43.16 cycles
+
+### Calibration Experiment
+- Split the original 80 training engines into 60 model-fitting engines and 20 calibration engines.
+- Kept the original 20 validation engines separate from model fitting and calibration.
+- Fitted lower and upper quantile models using the 60 fitting engines.
+- Estimated a conformal-style interval correction from calibration residual scores.
+- Estimated correction (`qhat`): -0.417 cycles.
+- Calibrated validation coverage: 83.5%.
+- Mean width of valid calibrated intervals: 41.94 cycles.
+- Empty intervals: 0.
+
+### Findings
+The calibrated interval achieved empirical validation coverage of 83.5%, close to the intended 80% target. The estimated correction was negative, indicating that the raw intervals were wider than necessary under this calibration experiment.
+
+### Limitations
+- Calibration observations within an engine are correlated; the row-level coverage result is not a formal guarantee for future engines.
+- The current intervals estimate the capped RUL target, not necessarily uncapped physical remaining life.
+- The original training target was capped at 125 cycles.
+- Additional engine-level coverage checks and evaluation are required before using these intervals in maintenance decisions.
+
+### Outcome
+A quantile-based RUL interval and calibration procedure have been implemented and evaluated on validation data. Further work is needed to assess coverage on independent engines and determine whether the interval width is practically useful.
+
+
