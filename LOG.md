@@ -571,3 +571,51 @@ The calibrated interval achieved empirical validation coverage of 83.5%, close t
 A quantile-based RUL interval and calibration procedure have been implemented and evaluated on validation data. Further work is needed to assess coverage on independent engines and determine whether the interval width is practically useful.
 
 
+## Day 15 — Cost-Based Evaluation
+
+### Objective
+Evaluate the XGBoost and LSTM models with an asymmetric scoring function that penalizes RUL overestimation more heavily than underestimation.
+
+### Scoring Function
+
+Define:
+
+`error = predicted_RUL - actual_RUL`
+
+The implemented score is:
+
+- If `error < 0`: `exp(-error / 13) - 1`
+- If `error >= 0`: `exp(error / 10) - 1`
+
+The total score is the sum of the individual observation penalties. Lower scores are better.
+
+### Asymmetry Validation
+- Underestimation by 10 cycles: penalty = 1.158
+- Overestimation by 10 cycles: penalty = 1.718
+- Verified that the same-magnitude overestimation receives the larger penalty.
+
+### Official Test Results
+
+| Model | RMSE | MAE | Asymmetric Score |
+|---|---:|---:|---:|
+| Tuned XGBoost | 16.452 | 12.442 | 493.579 |
+| LSTM | 16.425 | 12.596 | 423.567 |
+
+### Findings
+- LSTM achieved an approximately 14.2% lower asymmetric score than XGBoost.
+- LSTM had slightly lower overall RMSE.
+- XGBoost had slightly lower overall MAE.
+- Day 13 evaluation also showed lower LSTM errors in the critical region where actual RUL < 30 cycles.
+- The model ranking therefore depends on the evaluation objective: ordinary MAE slightly favours XGBoost, while the asymmetric score favours LSTM.
+
+### Model Selection Decision
+Carry LSTM forward as the provisional primary point-prediction model for Week 4 because of its better asymmetric score and critical-zone results. Retain XGBoost as a benchmark and as the current reference implementation for quantile-based uncertainty estimation.
+
+The existing XGBoost prediction intervals must not be presented as calibrated LSTM intervals. Uncertainty bounds compatible with the selected LSTM must be developed and evaluated before using them for risk-based alerts.
+
+### Limitations
+- Evaluation was performed on 100 official FD001 test engines.
+- The asymmetric score uses illustrative penalty constants and is not a calibrated model of actual maintenance costs.
+- Test results do not establish industrial safety or deployment readiness.
+- The training target was capped at 125 cycles, while the official test labels were uncapped.
+- Further engine-level evaluation, uncertainty calibration, and operational validation are required.
