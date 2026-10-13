@@ -312,3 +312,41 @@ The final feature set is provisional and may be revisited if later validation ev
 - The labels are capped at 125 cycles.
 - Rows belonging to the same engine are correlated; observations are not independent machines.
 - These metrics alone do not establish real-world industrial reliability.
+
+## Day 10 — Hyperparameter Tuning & Official Test Evaluation
+
+### Hyperparameter Search
+- Evaluated 12 unique XGBoost configurations.
+- Parameters varied: `max_depth`, `n_estimators`, and `learning_rate`.
+- Selection criterion: validation RMSE, with MAE as a secondary metric.
+- Selected configuration:
+  - `max_depth = 5`
+  - `n_estimators = 250`
+  - `learning_rate = 0.03`
+
+### Best Validation Results
+- RMSE: 12.821 cycles
+- MAE: 8.919 cycles
+
+### Official Test Evaluation
+- Test engines: 100
+- Test feature matrix: 100 × 24
+- Official labels: original, uncapped `RUL_FD001.txt`
+- RMSE: 16.452 cycles
+- MAE: 12.442 cycles
+
+### Secondary Capped-Label Evaluation
+- Test labels were capped at 125 for a separate diagnostic.
+- RMSE: 15.390 cycles
+- MAE: 11.372 cycles
+- This result is not the primary official test metric.
+
+### Prediction Diagnostics
+- Official test labels above 125: 11
+- Predictions below zero: 1
+- Predictions above 125: 2
+
+### Interpretation and Limitations
+The tuned XGBoost model was evaluated on the official FD001 test engines for the first time. Test errors were higher than the best validation errors. Direct comparison is limited because validation metrics were calculated across all validation rows, whereas the official test metrics use one final observed row per engine, with uncapped ground-truth labels.
+
+A matched partial-trajectory validation experiment is required before attributing the difference solely to overfitting. These results are benchmark evidence, not proof of real-world industrial reliability.
