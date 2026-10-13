@@ -657,3 +657,46 @@ The initial rule assigned 34 engines to HIGH, 0 to MEDIUM, and 66 to LOW. The br
 - Risk thresholds are provisional demonstration settings, not certified maintenance limits.
 - Test labels are available only for offline evaluation and must not be used by a deployed alerting function.
 - Human engineering review remains necessary before any maintenance decision.
+
+## Day 17 — Sensor Drift Monitoring
+
+### Objective
+Detect distribution changes in sensor data using Evidently.
+
+### Environment
+- Evidently version: 0.7.23
+- Monitored sensors: `sensor_2`, `sensor_4`, `sensor_7`, `sensor_9`, `sensor_14`, `sensor_20`
+- Reference sample: 5,000 rows × 6 sensors
+- Current sample: 5,000 rows × 6 sensors
+
+### Baseline Train-versus-Test Comparison
+The initial report flagged all six sensor columns as drifted. This indicates differences between the sampled training and test distributions; it does not by itself demonstrate degraded model performance.
+
+### Controlled Drift Experiment
+- Reference and current datasets began as identical copies.
+- Artificial shifts:
+  - `sensor_2`: +3.0
+  - `sensor_4`: +20.0
+  - `sensor_20`: +1.0
+
+### Results
+
+| Sensor | Deliberately shifted | Drift detected |
+|---|---|---|
+| `sensor_2` | Yes | Yes |
+| `sensor_4` | Yes | Yes |
+| `sensor_7` | No | No |
+| `sensor_9` | No | No |
+| `sensor_14` | No | No |
+| `sensor_20` | Yes | Yes |
+
+All three deliberately shifted sensors were detected, and all three unchanged sensors remained unflagged.
+
+### Operational Interpretation
+A drift alert should trigger investigation of sensor quality, operating conditions, preprocessing, and model performance. It should not automatically trigger model retraining.
+
+### Limitations
+- The controlled shifts are synthetic and deliberately noticeable.
+- The baseline samples contain correlated observations from repeated cycles of the same engines.
+- Distribution drift alone does not prove that predictive accuracy has deteriorated.
+- Thresholds and response procedures require further validation before deployment.
