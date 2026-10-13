@@ -350,3 +350,142 @@ The final feature set is provisional and may be revisited if later validation ev
 The tuned XGBoost model was evaluated on the official FD001 test engines for the first time. Test errors were higher than the best validation errors. Direct comparison is limited because validation metrics were calculated across all validation rows, whereas the official test metrics use one final observed row per engine, with uncapped ground-truth labels.
 
 A matched partial-trajectory validation experiment is required before attributing the difference solely to overfitting. These results are benchmark evidence, not proof of real-world industrial reliability.
+
+## Day 11 — Sequential Modeling & Sequence Preparation
+
+### Objective
+Prepare chronological sensor sequences for an LSTM-based Remaining Useful Life (RUL) prediction model.
+
+### Environment
+- PyTorch version: 2.14.0+cpu
+- Training device: CPU
+- CUDA available: No
+
+### Input Data
+- Dataset: NASA C-MAPSS FD001
+- Selected sensors: `sensor_2`, `sensor_4`, `sensor_7`, `sensor_9`, `sensor_14`, `sensor_20`
+- Sequence window: 30 consecutive operating cycles
+- Features per time step: 6 raw sensor readings
+- Target: capped RUL at the final cycle of each sequence
+
+### Preprocessing
+- Sorted observations by engine ID and cycle.
+- Applied `StandardScaler` to the six selected sensor channels.
+- Fitted the sensor scaler using training-engine observations only.
+- Applied the fitted scaler to validation-engine observations.
+- Generated overlapping 30-cycle windows separately for each engine.
+- Excluded early observations that could not form a complete 30-cycle window.
+- Assigned each sequence the capped RUL of its final observed cycle.
+- Preserved the engine-level training/validation separation.
+
+### Sequence Shapes
+
+| Dataset | Input shape | Target shape |
+|---|---|---|
+| Training | `(14241, 30, 6)` | `(14241,)` |
+| Validation | `(3490, 30, 6)` | `(3490,)` |
+
+### Validation Checks
+- All input sequences contain finite values.
+- Training and validation target values remain within 0–125 cycles.
+- Sequence inputs and targets have matching sample counts.
+- No engine overlap between training and validation: 0.
+- Forward-pass dimensions verified as `(batch_size, 30, 6)` inputs and `(batch_size,)` outputs.
+
+### Outcome
+Sequence preparation completed successfully. The data is ready for LSTM training.
+
+---
+
+## Day 12 — Building and Training an LSTM for RUL Prediction
+
+### Objective
+Build a small PyTorch LSTM that predicts RUL from chronological sensor sequences and evaluate its performance on unseen validation engines.
+
+### Model Architecture
+- Input size: 6 sensor channels
+- Sequence length: 30 cycles
+- LSTM layers: 1
+- Hidden units: 32
+- Output layer: Fully connected linear layer
+- Output: One continuous RUL prediction per sequence
+- Batch size: 128
+- Optimizer: Adam
+- Learning rate: 0.001
+- Loss function: Mean Squared Error (MSE)
+- Training device: CPU
+
+### Experiment 1 — Initial Training
+
+The first LSTM was trained for 10 epochs using the capped RUL targets without target standardization.
+
+Training MSE decreased from 7809.408 to 3545.237, and validation MSE decreased from 7121.097 to 3318.292.
+
+However, its validation predictions were concentrated in a narrow range of 1.76–38.92 cycles.
+
+| Metric | Initial LSTM |
+|---|---:|
+| Validation RMSE | 57.605 cycles |
+| Validation MAE | 46.498 cycles |
+| Mean predicted RUL | 34.69 cycles |
+| Mean actual RUL | 79.93 cycles |
+
+A constant-prediction baseline achieved RMSE 41.763 cycles and MAE 37.002 cycles, outperforming the initial LSTM.
+
+### Diagnosis
+Although training loss decreased, the network severely underpredicted RUL across the validation set. Decreasing loss alone was not sufficient evidence of a useful predictive model.
+
+### Experiment 2 — Target Standardization and Early Stopping
+
+The training process was revised to improve optimization.
+
+- Standardized the target using training-sequence target statistics only.
+- Training target mean: 80.812 cycles.
+- Training target standard deviation: 41.809 cycles.
+- Used gradient clipping with a maximum gradient norm of 1.0.
+- Increased the maximum training duration to 30 epochs.
+- Implemented early stopping with a patience of 5 epochs.
+- Restored the model checkpoint with the lowest validation MSE.
+- Converted predictions back to cycles before calculating evaluation metrics.
+
+The best checkpoint was selected at epoch 5, with standardized validation MSE of 0.1116.
+
+### Retrained LSTM — Validation Results
+
+| Metric | Result |
+|---|---:|
+| Validation RMSE | 13.966 cycles |
+| Validation MAE | 9.980 cycles |
+| Mean predicted RUL | 79.11 cycles |
+| Mean actual RUL | 79.93 cycles |
+| Minimum prediction | -4.66 cycles |
+| Maximum prediction | 133.02 cycles |
+
+### Experiment 3 — Fair Comparison Against Tuned XGBoost
+
+The tuned XGBoost model was retrained using only the original 80 training engines and evaluated on the same 3490 validation-sequence endpoints as the LSTM.
+
+| Model | Validation RMSE | Validation MAE |
+|---|---:|---:|
+| Tuned XGBoost | 13.570 cycles | 9.608 cycles |
+| LSTM | 13.966 cycles | 9.980 cycles |
+
+Both models were evaluated against the same capped RUL targets at the sequence endpoints.
+
+### Findings
+- Target standardization and early stopping substantially improved LSTM performance.
+- The retrained LSTM substantially outperformed its initial run and the constant-prediction baseline.
+- Tuned XGBoost currently performs slightly better than the LSTM on matched validation endpoints.
+- The LSTM still produces predictions below zero and above the training target cap.
+- Its performance does not yet justify replacing XGBoost as the preferred model.
+
+### Limitations and Next Steps
+- Current LSTM results are based on the engine-level validation split.
+- Validation metrics are model-selection results and are not official test-set metrics.
+- The official test set has not yet been evaluated using the LSTM.
+- Final preprocessing must fit the sensor scaler using all labelled training engines and apply that same scaler to the official test sequences.
+- A fair comparison on the official 100-engine test set is required before selecting a final model.
+- Prediction-boundary handling and uncertainty estimation remain future tasks.
+
+### Day 12 Outcome
+A working LSTM pipeline has been implemented, trained, and evaluated. The model shows meaningful learning after the training procedure was revised, but tuned XGBoost remains the stronger model on the current matched validation comparison.
