@@ -619,3 +619,41 @@ The existing XGBoost prediction intervals must not be presented as calibrated LS
 - Test results do not establish industrial safety or deployment readiness.
 - The training target was capped at 125 cycles, while the official test labels were uncapped.
 - Further engine-level evaluation, uncertainty calibration, and operational validation are required.
+
+## Day 16 — Risk-Based Alerting
+
+### Objective
+Convert RUL estimates and uncertainty intervals into actionable HIGH, MEDIUM, and LOW risk tiers.
+
+### Alerting Model
+- Model: LSTM
+- Input window: 30 cycles
+- Sensor channels: 6
+- Fitting engines: 60
+- Calibration engines: 20
+- Calibration correction: 30.78 cycles
+- Target: capped RUL (0–125 cycles)
+
+### Initial Risk Rule
+- HIGH if predicted RUL < 20 or lower bound < 20.
+- MEDIUM if predicted RUL < 50.
+- LOW otherwise.
+
+The initial rule assigned 34 engines to HIGH, 0 to MEDIUM, and 66 to LOW. The broad interval made the MEDIUM condition unreachable.
+
+### Revised Risk Rule
+- HIGH if predicted RUL < 20 or lower bound < 20.
+- MEDIUM if not HIGH and predicted RUL < 50 or lower bound < 50.
+- LOW otherwise.
+
+### Validation Against Known Test Outcomes
+- Official test engines: 100.
+- Initial inspection of three HIGH-risk engines found true RUL values of 8, 7, and 10 cycles.
+- Record the revised HIGH/MEDIUM/LOW counts and measured high-alert precision and critical-engine recall after validation.
+
+### Limitations
+- The calibration estimate uses only 20 engines.
+- The intervals concern capped RUL and are not guaranteed confidence intervals for uncapped physical remaining life.
+- Risk thresholds are provisional demonstration settings, not certified maintenance limits.
+- Test labels are available only for offline evaluation and must not be used by a deployed alerting function.
+- Human engineering review remains necessary before any maintenance decision.
