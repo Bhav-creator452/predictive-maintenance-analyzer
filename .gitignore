@@ -32,3 +32,5 @@ Thumbs.db
 *.log
 
 day17_controlled_drift_report.html
+
+artifacts/
