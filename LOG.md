@@ -803,3 +803,35 @@ Improve API validation and logging, document the project setup, and verify that 
 
 ### Limitations
 The project remains an offline research prototype using NASA C-MAPSS FD001 data. The API does not yet have authentication or rate limiting. Prediction intervals and risk thresholds require additional validation before being used in real maintenance decisions.
+
+### Final Verification Results
+
+A separate verification environment, `.venv-verify`, was created using Python 3.13.5 and populated from `requirements.txt`.
+
+| Check | Result |
+|---|---|
+| Dependency installation | Completed |
+| `python -m pip check` | No broken requirements found |
+| API module import | Passed |
+| Saved LSTM weights and scaler | Loaded successfully |
+| Offline engine registry | 100 engines loaded |
+| API prediction smoke test | HTTP 200 |
+| API validation tests | 6 passed, 0 failed |
+| Streamlit dashboard startup | Successful |
+| API/dashboard consistency | Engine 19 results matched within rounding precision |
+
+### Verified Prediction Example
+
+For Engine 19 at cycle 135:
+- Predicted RUL: 104.653 cycles.
+- Lower interval bound: 73.877 cycles.
+- Upper interval bound: 125.0 cycles.
+- Risk tier: LOW.
+
+### Reproducibility Status
+
+The API and dashboard were verified in a separate virtual environment using the repository's dependency file and saved runtime artifacts. A complete fresh-clone verification remains a final optional check.
+
+### Final Project Limitations
+
+The application uses offline NASA C-MAPSS FD001 data, predicts a capped RUL target, and uses a preliminary uncertainty correction estimated from a small calibration sample. It has not been validated for live industrial equipment or safety-critical maintenance decisions. The API still requires authentication, rate limiting, and broader operational validation before public or production deployment.
