@@ -731,3 +731,37 @@ Build an interactive dashboard for exploring engine sensor histories, RUL predic
 - Risk thresholds remain provisional.
 - Uncertainty intervals are experimental, not guaranteed coverage for actual physical RUL.
 - The application is a research prototype, not a safety-certified maintenance system.
+
+
+## Day 19 — FastAPI Model Serving
+
+### Objective
+Expose the RUL prediction pipeline through an HTTP API and connect the Streamlit dashboard to the API.
+
+### Implementation
+- Created `src/lstm_model.py` to make the trained network architecture reusable.
+- Saved the alerting LSTM weights, fitted sensor scaler, and model metadata.
+- Implemented FastAPI endpoints:
+  - `GET /` — service information.
+  - `GET /health` — basic service health.
+  - `POST /predict` — RUL prediction from 30 consecutive sensor readings.
+- Used Pydantic request and response schemas.
+- Added request validation for window length, chronological ordering, and finite sensor readings.
+- Added prediction logging and error responses.
+- Implemented capped-RUL output, experimental prediction bounds, and risk classification.
+- Connected the Streamlit current-assessment view to FastAPI.
+- Retained exported CSV files for historical charts and fleet-level display.
+
+### Validation
+- Root endpoint returned a successful response.
+- Health endpoint confirmed the model was loaded.
+- A one-reading Swagger example returned HTTP 422 as expected.
+- A request containing 30 sensor readings returned HTTP 200.
+- Engine 19's API prediction agreed with the dashboard's exported result within rounding tolerance.
+
+### Limitations
+- The service uses offline NASA C-MAPSS FD001 data, not live equipment telemetry.
+- The uncertainty correction is preliminary and based on only 20 calibration engines.
+- The endpoint has no authentication or rate limiting and is not ready for public exposure.
+- Predictions concern the capped-RUL modelling target.
+- Operational and safety validation is still required.

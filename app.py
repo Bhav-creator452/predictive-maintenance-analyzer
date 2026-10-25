@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import requests
 import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
@@ -22,6 +23,8 @@ ARTIFACTS_DIR = PROJECT_DIR / "artifacts"
 SENSOR_FILE = ARTIFACTS_DIR / "sensor_history.csv"
 PREDICTION_FILE = ARTIFACTS_DIR / "rul_predictions.csv"
 FLEET_FILE = ARTIFACTS_DIR / "fleet_summary.csv"
+
+API_URL = "http://127.0.0.1:8000"
 
 SENSORS = [
     "sensor_2",
@@ -125,6 +128,46 @@ def load_data():
 
     return sensor_history, predictions, fleet
 
+def fetch_prediction_from_api(engine_id, engine_sensors):
+    """
+    Request the current RUL assessment from FastAPI
+    using the latest 30 raw sensor observations.
+    """
+    recent = (
+        engine_sensors
+        .sort_values("cycle")
+        .tail(30)
+    )
+
+    if len(recent) != 30:
+        raise ValueError(
+            "The selected engine needs at least "
+            "30 sensor observations."
+        )
+
+    readings = []
+
+    for _, row in recent.iterrows():
+        reading = {
+            "cycle": int(row["cycle"])
+        }
+
+        for sensor in SENSORS:
+            reading[sensor] = float(row[sensor])
+
+        readings.append(reading)
+
+    response = requests.post(
+        f"{API_URL}/predict",
+        json={
+            "engine_id": int(engine_id),
+            "readings": readings,
+        },
+        timeout=15,
+    )
+
+    response.raise_for_status()
+    return response.json()
 
 try:
     sensor_history, predictions, fleet = load_data()
@@ -293,12 +336,43 @@ if engine_fleet_rows.empty:
     st.error("Current fleet summary is unavailable for this engine.")
     st.stop()
 
-latest = engine_fleet_rows.iloc[0]
+try:
+    api_result = fetch_prediction_from_api(
+        selected_engine,
+        engine_sensors,
+    )
 
-predicted_rul = float(latest["predicted_RUL"])
-lower_bound = float(latest["lower_bound"])
-upper_bound = float(latest["upper_bound"])
-risk_tier = str(latest["risk_tier"])
+except requests.RequestException as exc:
+    st.error(
+        "Unable to obtain the current prediction from FastAPI. "
+        "Check that the API server is running on port 8000."
+    )
+    st.code(str(exc))
+    st.stop()
+
+except ValueError as exc:
+    st.error(str(exc))
+    st.stop()
+
+predicted_rul = float(
+    api_result["predicted_rul_cycles"]
+)
+
+lower_bound = float(
+    api_result["interval_lower_cycles"]
+)
+
+upper_bound = float(
+    api_result["interval_upper_cycles"]
+)
+
+risk_tier = api_result["risk_tier"]
+
+st.caption(
+    f"Current assessment served by FastAPI "
+    f"for Engine {selected_engine}, "
+    f"cycle {api_result['last_cycle']}."
+)
 
 st.divider()
 st.header(f"Engine {selected_engine} — Current Assessment")

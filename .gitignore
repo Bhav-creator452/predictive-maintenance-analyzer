@@ -34,3 +34,6 @@ Thumbs.db
 day17_controlled_drift_report.html
 
 artifacts/
+
+notebooks/day17_baseline_drift_report.html
+notebooks/day17_controlled_drift_report_v2.html
