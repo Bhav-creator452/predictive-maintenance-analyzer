@@ -700,3 +700,34 @@ A drift alert should trigger investigation of sensor quality, operating conditio
 - The baseline samples contain correlated observations from repeated cycles of the same engines.
 - Distribution drift alone does not prove that predictive accuracy has deteriorated.
 - Thresholds and response procedures require further validation before deployment.
+
+
+## Day 18 — Per-Machine Streamlit Dashboard
+
+### Objective
+Build an interactive dashboard for exploring engine sensor histories, RUL predictions, uncertainty intervals, and fleet risk.
+
+### Implementation
+- Streamlit dashboard using `app.py`.
+- Engine selector for inspecting individual machines.
+- Six sensor trend charts per selected engine.
+- RUL prediction history with an experimental uncertainty band.
+- Current RUL estimate, interval bounds, and risk tier.
+- Fleet overview and risk-filterable table sorted by urgency.
+- Dashboard reads exported CSV files without retraining models on app startup.
+
+### Data Exports
+- `artifacts/sensor_history.csv`
+- `artifacts/rul_predictions.csv`
+- `artifacts/fleet_summary.csv`
+
+### Validation
+- Dashboard launched successfully in the local browser.
+- Record the results of manual checks for three engines.
+- Confirm that displayed predictions and risk tiers match the exported datasets.
+
+### Limitations
+- Offline demonstration; no live telemetry ingestion.
+- Risk thresholds remain provisional.
+- Uncertainty intervals are experimental, not guaranteed coverage for actual physical RUL.
+- The application is a research prototype, not a safety-certified maintenance system.
