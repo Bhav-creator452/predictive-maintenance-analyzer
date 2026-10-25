@@ -37,3 +37,17 @@ artifacts/
 
 notebooks/day17_baseline_drift_report.html
 notebooks/day17_controlled_drift_report_v2.html
+
+# Keep raw datasets and virtual environments private to local development
+/data/
+/.venv/
+/.venv-verify/
+
+# Allow the runtime artifacts needed by the API and dashboard
+!/artifacts/
+!/artifacts/alert_lstm_state.pt
+!/artifacts/alert_sensor_scaler.joblib
+!/artifacts/alert_model_metadata.json
+!/artifacts/sensor_history.csv
+!/artifacts/rul_predictions.csv
+!/artifacts/fleet_summary.csv

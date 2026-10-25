@@ -1,0 +1,22 @@
+{
+  "model_name": "alerting_lstm",
+  "window_size": 30,
+  "selected_sensors": [
+    "sensor_2",
+    "sensor_4",
+    "sensor_7",
+    "sensor_9",
+    "sensor_14",
+    "sensor_20"
+  ],
+  "input_size": 6,
+  "hidden_size": 32,
+  "num_layers": 1,
+  "target_mean": 80.21024322509766,
+  "target_std": 41.74476623535156,
+  "interval_correction": 30.77552032470703,
+  "rul_cap": 125,
+  "high_rul_threshold": 20,
+  "medium_rul_threshold": 50,
+  "risk_rule": "high_if_prediction_or_lower_bound_below_20; medium_if_not_high_and_prediction_or_lower_bound_below_50"
+}

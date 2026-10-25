@@ -765,3 +765,41 @@ Expose the RUL prediction pipeline through an HTTP API and connect the Streamlit
 - The endpoint has no authentication or rate limiting and is not ready for public exposure.
 - Predictions concern the capped-RUL modelling target.
 - Operational and safety validation is still required.
+
+## Day 20 — Logging, Error Handling, Packaging & Documentation
+
+### Objective
+Improve API validation and logging, document the project setup, and verify that the application can be recreated from its dependency file and saved artifacts.
+
+### API Improvements
+- Added request validation for the 30-cycle input window.
+- Enforced chronological, consecutive cycle numbers.
+- Rejected unknown engine IDs using the registered offline fleet.
+- Rejected missing sensor values and malformed requests.
+- Added HTTP request logging with method, path, and status.
+- Added prediction logging with engine ID, final cycle, predicted RUL, and risk tier.
+- Returned explicit HTTP errors for invalid requests.
+
+### Validation Results
+- Valid 30-cycle request: HTTP 200.
+- Insufficient readings: HTTP 422.
+- Nonconsecutive cycles: HTTP 422.
+- Unknown engine ID: HTTP 404.
+- Missing sensor: HTTP 422.
+- Out-of-order readings: HTTP 422.
+- Validation test suite: 6 passed, 0 failed.
+
+### Documentation and Packaging
+- Recorded installed dependencies in `requirements.txt`.
+- Added API and dashboard startup instructions to `README.md`.
+- Documented model evaluation results, risk logic, drift monitoring, and limitations.
+- Documented the required saved model and dashboard artifacts.
+
+### Reproducibility
+- Record the result of `python -m pip check`.
+- Record whether the API module imports in the verification environment.
+- Record whether both API and dashboard start successfully from the documented setup instructions.
+- Record the final successful API smoke test and six validation tests.
+
+### Limitations
+The project remains an offline research prototype using NASA C-MAPSS FD001 data. The API does not yet have authentication or rate limiting. Prediction intervals and risk thresholds require additional validation before being used in real maintenance decisions.

@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from src.lstm_model import RUL_LSTM
@@ -25,6 +25,7 @@ ARTIFACTS_DIR = BASE_DIR / "artifacts"
 MODEL_PATH = ARTIFACTS_DIR / "alert_lstm_state.pt"
 SCALER_PATH = ARTIFACTS_DIR / "alert_sensor_scaler.joblib"
 METADATA_PATH = ARTIFACTS_DIR / "alert_model_metadata.json"
+FLEET_PATH = ARTIFACTS_DIR / "fleet_summary.csv"
 
 DEVICE = torch.device("cpu")
 
@@ -105,6 +106,45 @@ logger.info(
     DEVICE,
 )
 
+if not FLEET_PATH.exists():
+    raise RuntimeError(
+        f"Engine registry is missing: {FLEET_PATH}"
+    )
+
+known_engine_ids = set(
+    pd.read_csv(
+        FLEET_PATH,
+        usecols=["engine_id"]
+    )["engine_id"]
+    .astype(int)
+    .tolist()
+)
+
+logger.info(
+    "Loaded offline engine registry: %d engines",
+    len(known_engine_ids)
+)
+
+@app.middleware("http")
+async def log_http_requests(request: Request, call_next):
+    try:
+        response = await call_next(request)
+    except Exception:
+        logger.exception(
+            "http_request_failed method=%s path=%s",
+            request.method,
+            request.url.path,
+        )
+        raise
+
+    logger.info(
+        "http_request method=%s path=%s status_code=%s",
+        request.method,
+        request.url.path,
+        response.status_code,
+    )
+
+    return response
 
 # --------------------------------------------------
 # Request and response schemas
@@ -122,7 +162,7 @@ class SensorReading(BaseModel):
 
 
 class PredictionRequest(BaseModel):
-    engine_id: int | None = Field(default=None, ge=1)
+    engine_id: int = Field(..., ge=1)
     readings: list[SensorReading]
 
 
@@ -195,8 +235,33 @@ def predict_rul(
     request: PredictionRequest,
 ) -> PredictionResponse:
 
+    logger.info(
+    "prediction_request_received engine_id=%s readings=%s",
+    request.engine_id,
+    len(request.readings),
+)
+
+    if request.engine_id not in known_engine_ids:
+        logger.warning(
+        "prediction_rejected engine_id=%s reason=unknown_engine_id",
+        request.engine_id,
+    )
+        
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"Unknown engine_id {request.engine_id}. "
+                "This offline demo recognizes only registered FD001 engines."
+            ),
+    )
+
     # Require exactly 30 observations.
     if len(request.readings) != WINDOW_SIZE:
+        logger.warning(
+            "prediction_rejected engine_id=%s reason=invalid_window_size count=%s",
+            request.engine_id,
+            len(request.readings),
+    )
         raise HTTPException(
             status_code=422,
             detail=(
